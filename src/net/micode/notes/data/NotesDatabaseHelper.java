@@ -28,54 +28,59 @@ import net.micode.notes.data.Notes.NoteColumns;
 
 
 public class NotesDatabaseHelper extends SQLiteOpenHelper {
+    // 数据库名称
     private static final String DB_NAME = "note.db";
-
+    // 数据库版本号
     private static final int DB_VERSION = 4;
 
+    // 数据库表名定义
     public interface TABLE {
-        public static final String NOTE = "note";
-
-        public static final String DATA = "data";
+        public static final String NOTE = "note";  // 笔记表
+        public static final String DATA = "data";  // 数据表
     }
 
+    // 日志标签
     private static final String TAG = "NotesDatabaseHelper";
 
+    // 单例实例
     private static NotesDatabaseHelper mInstance;
 
+    // 创建笔记表的SQL语句
     private static final String CREATE_NOTE_TABLE_SQL =
         "CREATE TABLE " + TABLE.NOTE + "(" +
-            NoteColumns.ID + " INTEGER PRIMARY KEY," +
-            NoteColumns.PARENT_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.ALERTED_DATE + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.BG_COLOR_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.CREATED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +
-            NoteColumns.HAS_ATTACHMENT + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.MODIFIED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +
-            NoteColumns.NOTES_COUNT + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.SNIPPET + " TEXT NOT NULL DEFAULT ''," +
-            NoteColumns.TYPE + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.WIDGET_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.WIDGET_TYPE + " INTEGER NOT NULL DEFAULT -1," +
-            NoteColumns.SYNC_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.LOCAL_MODIFIED + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.ORIGIN_PARENT_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.GTASK_ID + " TEXT NOT NULL DEFAULT ''," +
-            NoteColumns.VERSION + " INTEGER NOT NULL DEFAULT 0" +
+            NoteColumns.ID + " INTEGER PRIMARY KEY," +  // 主键ID
+            NoteColumns.PARENT_ID + " INTEGER NOT NULL DEFAULT 0," +  // 父文件夹ID
+            NoteColumns.ALERTED_DATE + " INTEGER NOT NULL DEFAULT 0," +  // 提醒时间
+            NoteColumns.BG_COLOR_ID + " INTEGER NOT NULL DEFAULT 0," +  // 背景颜色ID
+            NoteColumns.CREATED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +  // 创建时间
+            NoteColumns.HAS_ATTACHMENT + " INTEGER NOT NULL DEFAULT 0," +  // 是否有附件
+            NoteColumns.MODIFIED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +  // 修改时间
+            NoteColumns.NOTES_COUNT + " INTEGER NOT NULL DEFAULT 0," +  // 子笔记数量
+            NoteColumns.SNIPPET + " TEXT NOT NULL DEFAULT ''," +  // 内容摘要
+            NoteColumns.TYPE + " INTEGER NOT NULL DEFAULT 0," +  // 笔记类型
+            NoteColumns.WIDGET_ID + " INTEGER NOT NULL DEFAULT 0," +  // 小部件ID
+            NoteColumns.WIDGET_TYPE + " INTEGER NOT NULL DEFAULT -1," +  // 小部件类型
+            NoteColumns.SYNC_ID + " INTEGER NOT NULL DEFAULT 0," +  // 同步ID
+            NoteColumns.LOCAL_MODIFIED + " INTEGER NOT NULL DEFAULT 0," +  // 本地修改标记
+            NoteColumns.ORIGIN_PARENT_ID + " INTEGER NOT NULL DEFAULT 0," +  // 原始父文件夹ID
+            NoteColumns.GTASK_ID + " TEXT NOT NULL DEFAULT ''," +  // Google Task ID
+            NoteColumns.VERSION + " INTEGER NOT NULL DEFAULT 0" +  // 版本号
         ")";
 
+    // 创建数据表的SQL语句
     private static final String CREATE_DATA_TABLE_SQL =
         "CREATE TABLE " + TABLE.DATA + "(" +
-            DataColumns.ID + " INTEGER PRIMARY KEY," +
-            DataColumns.MIME_TYPE + " TEXT NOT NULL," +
-            DataColumns.NOTE_ID + " INTEGER NOT NULL DEFAULT 0," +
-            NoteColumns.CREATED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +
-            NoteColumns.MODIFIED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +
-            DataColumns.CONTENT + " TEXT NOT NULL DEFAULT ''," +
-            DataColumns.DATA1 + " INTEGER," +
-            DataColumns.DATA2 + " INTEGER," +
-            DataColumns.DATA3 + " TEXT NOT NULL DEFAULT ''," +
-            DataColumns.DATA4 + " TEXT NOT NULL DEFAULT ''," +
-            DataColumns.DATA5 + " TEXT NOT NULL DEFAULT ''" +
+            DataColumns.ID + " INTEGER PRIMARY KEY," +  // 主键ID
+            DataColumns.MIME_TYPE + " TEXT NOT NULL," +  // MIME类型
+            DataColumns.NOTE_ID + " INTEGER NOT NULL DEFAULT 0," +  // 关联的笔记ID
+            NoteColumns.CREATED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +  // 创建时间
+            NoteColumns.MODIFIED_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)," +  // 修改时间
+            DataColumns.CONTENT + " TEXT NOT NULL DEFAULT ''," +  // 内容
+            DataColumns.DATA1 + " INTEGER," +  // 扩展字段1
+            DataColumns.DATA2 + " INTEGER," +  // 扩展字段2
+            DataColumns.DATA3 + " TEXT NOT NULL DEFAULT ''," +  // 扩展字段3
+            DataColumns.DATA4 + " TEXT NOT NULL DEFAULT ''," +  // 扩展字段4
+            DataColumns.DATA5 + " TEXT NOT NULL DEFAULT ''" +  // 扩展字段5
         ")";
 
     private static final String CREATE_DATA_NOTE_ID_INDEX_SQL =
@@ -235,35 +240,28 @@ public class NotesDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(FOLDER_MOVE_NOTES_ON_TRASH_TRIGGER);
     }
 
+    // 创建系统文件夹
     private void createSystemFolder(SQLiteDatabase db) {
         ContentValues values = new ContentValues();
 
-        /**
-         * call record foler for call notes
-         */
+        // 创建通话记录文件夹
         values.put(NoteColumns.ID, Notes.ID_CALL_RECORD_FOLDER);
         values.put(NoteColumns.TYPE, Notes.TYPE_SYSTEM);
         db.insert(TABLE.NOTE, null, values);
 
-        /**
-         * root folder which is default folder
-         */
+        // 创建根文件夹
         values.clear();
         values.put(NoteColumns.ID, Notes.ID_ROOT_FOLDER);
         values.put(NoteColumns.TYPE, Notes.TYPE_SYSTEM);
         db.insert(TABLE.NOTE, null, values);
 
-        /**
-         * temporary folder which is used for moving note
-         */
+        // 创建临时文件夹
         values.clear();
         values.put(NoteColumns.ID, Notes.ID_TEMPARAY_FOLDER);
         values.put(NoteColumns.TYPE, Notes.TYPE_SYSTEM);
         db.insert(TABLE.NOTE, null, values);
 
-        /**
-         * create trash folder
-         */
+        // 创建回收站文件夹
         values.clear();
         values.put(NoteColumns.ID, Notes.ID_TRASH_FOLER);
         values.put(NoteColumns.TYPE, Notes.TYPE_SYSTEM);

@@ -14,35 +14,55 @@
  * limitations under the License.
  */
 
+// 包声明，指定该类所属的包
 package net.micode.notes.gtask.data;
 
+// 导入 AppWidgetManager 类，用于管理应用小部件
 import android.appwidget.AppWidgetManager;
+// 导入 ContentResolver 类，用于与内容提供者进行交互
 import android.content.ContentResolver;
+// 导入 ContentValues 类，用于存储键值对，通常用于数据库操作
 import android.content.ContentValues;
+// 导入 Context 类，提供对应用程序环境的访问
 import android.content.Context;
+// 导入 Cursor 类，用于遍历数据库查询结果
 import android.database.Cursor;
+// 导入 Uri 类，用于表示统一资源标识符
 import android.net.Uri;
+// 导入 Log 类，用于记录日志信息
 import android.util.Log;
 
+// 导入 Notes 类，可能包含笔记相关的常量和数据结构
 import net.micode.notes.data.Notes;
+// 导入 Notes 类中的 DataColumns 内部类，包含数据列的常量
 import net.micode.notes.data.Notes.DataColumns;
+// 导入 Notes 类中的 NoteColumns 内部类，包含笔记列的常量
 import net.micode.notes.data.Notes.NoteColumns;
+// 导入 ActionFailureException 类，用于处理操作失败的异常
 import net.micode.notes.gtask.exception.ActionFailureException;
+// 导入 GTaskStringUtils 类，可能包含与 Google 任务相关的字符串处理工具
 import net.micode.notes.tool.GTaskStringUtils;
+// 导入 ResourceParser 类，可能用于解析资源
 import net.micode.notes.tool.ResourceParser;
 
+// 导入 JSONArray 类，用于处理 JSON 数组
 import org.json.JSONArray;
+// 导入 JSONException 类，用于处理 JSON 解析异常
 import org.json.JSONException;
+// 导入 JSONObject 类，用于处理 JSON 对象
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-
+/**
+ * SqlNote 类用于管理和操作笔记数据，包括从数据库加载笔记、设置笔记内容以及获取笔记内容等功能。
+ */
 public class SqlNote {
+    // 日志标签，用于标识该类的日志信息
     private static final String TAG = SqlNote.class.getSimpleName();
-
+    // 无效 ID 的常量值
     private static final int INVALID_ID = -99999;
-
+    // 查询笔记时使用的投影列数组
     public static final String[] PROJECTION_NOTE = new String[] {
             NoteColumns.ID, NoteColumns.ALERTED_DATE, NoteColumns.BG_COLOR_ID,
             NoteColumns.CREATED_DATE, NoteColumns.HAS_ATTACHMENT, NoteColumns.MODIFIED_DATE,
@@ -51,77 +71,83 @@ public class SqlNote {
             NoteColumns.LOCAL_MODIFIED, NoteColumns.ORIGIN_PARENT_ID, NoteColumns.GTASK_ID,
             NoteColumns.VERSION
     };
-
+    // 投影列数组中 ID 列的索引
     public static final int ID_COLUMN = 0;
-
+    // 投影列数组中提醒日期列的索引
     public static final int ALERTED_DATE_COLUMN = 1;
-
+    // 投影列数组中背景颜色 ID 列的索引
     public static final int BG_COLOR_ID_COLUMN = 2;
-
+    // 投影列数组中创建日期列的索引
     public static final int CREATED_DATE_COLUMN = 3;
-
+    // 投影列数组中是否有附件列的索引
     public static final int HAS_ATTACHMENT_COLUMN = 4;
-
+    // 投影列数组中修改日期列的索引
     public static final int MODIFIED_DATE_COLUMN = 5;
-
+    // 投影列数组中笔记数量列的索引
     public static final int NOTES_COUNT_COLUMN = 6;
-
+    // 投影列数组中父 ID 列的索引
     public static final int PARENT_ID_COLUMN = 7;
-
+    // 投影列数组中摘要列的索引
     public static final int SNIPPET_COLUMN = 8;
-
+    // 投影列数组中类型列的索引
     public static final int TYPE_COLUMN = 9;
-
+    // 投影列数组中小部件 ID 列的索引
     public static final int WIDGET_ID_COLUMN = 10;
-
+    // 投影列数组中小部件类型列的索引
     public static final int WIDGET_TYPE_COLUMN = 11;
-
+    // 投影列数组中同步 ID 列的索引
     public static final int SYNC_ID_COLUMN = 12;
-
+    // 投影列数组中本地修改列的索引
     public static final int LOCAL_MODIFIED_COLUMN = 13;
-
+    // 投影列数组中原始父 ID 列的索引
     public static final int ORIGIN_PARENT_ID_COLUMN = 14;
-
+    // 投影列数组中 Google 任务 ID 列的索引
     public static final int GTASK_ID_COLUMN = 15;
-
+    // 投影列数组中版本列的索引
     public static final int VERSION_COLUMN = 16;
 
+    // 应用程序上下文
     private Context mContext;
-
+    // 内容解析器，用于与内容提供者交互
     private ContentResolver mContentResolver;
-
+    // 标记该笔记是否为新创建的
     private boolean mIsCreate;
-
+    // 笔记的 ID
     private long mId;
-
+    // 笔记的提醒日期
     private long mAlertDate;
-
+    // 笔记的背景颜色 ID
     private int mBgColorId;
-
+    // 笔记的创建日期
     private long mCreatedDate;
-
+    // 笔记是否有附件
     private int mHasAttachment;
-
+    // 笔记的修改日期
     private long mModifiedDate;
-
+    // 笔记的父 ID
     private long mParentId;
-
+    // 笔记的摘要
     private String mSnippet;
-
+    // 笔记的类型
     private int mType;
-
+    // 笔记小部件的 ID
     private int mWidgetId;
-
+    // 笔记小部件的类型
     private int mWidgetType;
-
+    // 笔记的原始父 ID
     private long mOriginParent;
-
+    // 笔记的版本
     private long mVersion;
-
+    // 存储笔记差异值的 ContentValues 对象
     private ContentValues mDiffNoteValues;
-
+    // 存储笔记相关数据的列表
     private ArrayList<SqlData> mDataList;
 
+    /**
+     * 构造函数，用于创建一个新的笔记对象。
+     *
+     * @param context 应用程序上下文
+     */
     public SqlNote(Context context) {
         mContext = context;
         mContentResolver = context.getContentResolver();
@@ -143,6 +169,12 @@ public class SqlNote {
         mDataList = new ArrayList<SqlData>();
     }
 
+    /**
+     * 构造函数，用于从 Cursor 中加载笔记数据。
+     *
+     * @param context 应用程序上下文
+     * @param c       包含笔记数据的 Cursor 对象
+     */
     public SqlNote(Context context, Cursor c) {
         mContext = context;
         mContentResolver = context.getContentResolver();
@@ -154,6 +186,12 @@ public class SqlNote {
         mDiffNoteValues = new ContentValues();
     }
 
+    /**
+     * 构造函数，用于根据笔记 ID 从数据库中加载笔记数据。
+     *
+     * @param context 应用程序上下文
+     * @param id      笔记的 ID
+     */
     public SqlNote(Context context, long id) {
         mContext = context;
         mContentResolver = context.getContentResolver();
@@ -163,9 +201,13 @@ public class SqlNote {
         if (mType == Notes.TYPE_NOTE)
             loadDataContent();
         mDiffNoteValues = new ContentValues();
-
     }
 
+    /**
+     * 根据笔记 ID 从数据库中查询并加载笔记数据。
+     *
+     * @param id 笔记的 ID
+     */
     private void loadFromCursor(long id) {
         Cursor c = null;
         try {
@@ -185,6 +227,11 @@ public class SqlNote {
         }
     }
 
+    /**
+     * 从 Cursor 中加载笔记数据。
+     *
+     * @param c 包含笔记数据的 Cursor 对象
+     */
     private void loadFromCursor(Cursor c) {
         mId = c.getLong(ID_COLUMN);
         mAlertDate = c.getLong(ALERTED_DATE_COLUMN);
@@ -200,6 +247,9 @@ public class SqlNote {
         mVersion = c.getLong(VERSION_COLUMN);
     }
 
+    /**
+     * 加载笔记相关的数据内容。
+     */
     private void loadDataContent() {
         Cursor c = null;
         mDataList.clear();
@@ -226,13 +276,19 @@ public class SqlNote {
         }
     }
 
+    /**
+     * 根据 JSON 对象设置笔记的内容。
+     *
+     * @param js 包含笔记内容的 JSON 对象
+     * @return 如果设置成功返回 true，否则返回 false
+     */
     public boolean setContent(JSONObject js) {
         try {
             JSONObject note = js.getJSONObject(GTaskStringUtils.META_HEAD_NOTE);
             if (note.getInt(NoteColumns.TYPE) == Notes.TYPE_SYSTEM) {
                 Log.w(TAG, "cannot set system folder");
             } else if (note.getInt(NoteColumns.TYPE) == Notes.TYPE_FOLDER) {
-                // for folder we can only update the snnipet and type
+                // 对于文件夹，只能更新摘要和类型
                 String snippet = note.has(NoteColumns.SNIPPET) ? note
                         .getString(NoteColumns.SNIPPET) : "";
                 if (mIsCreate || !mSnippet.equals(snippet)) {
@@ -359,6 +415,11 @@ public class SqlNote {
         return true;
     }
 
+    /**
+     * 获取笔记的内容并以 JSON 对象的形式返回。
+     *
+     * @return 包含笔记内容的 JSON 对象，如果笔记未创建则返回 null
+     */
     public JSONObject getContent() {
         try {
             JSONObject js = new JSONObject();
@@ -407,11 +468,21 @@ public class SqlNote {
         return null;
     }
 
+    /**
+     * 设置笔记的父 ID。
+     *
+     * @param id 父 ID
+     */
     public void setParentId(long id) {
         mParentId = id;
         mDiffNoteValues.put(NoteColumns.PARENT_ID, id);
     }
 
+    /**
+     * 设置笔记的 Google 任务 ID。
+     *
+     * @param gid Google 任务 ID
+     */
     public void setGtaskId(String gid) {
         mDiffNoteValues.put(NoteColumns.GTASK_ID, gid);
     }

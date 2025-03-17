@@ -23,23 +23,49 @@ import net.micode.notes.R;
 import net.micode.notes.data.Notes;
 import net.micode.notes.tool.ResourceParser;
 
-
+/**
+ * NoteWidgetProvider_2x 类继承自 NoteWidgetProvider，用于处理 2x 大小的便签小部件的更新逻辑。
+ */
 public class NoteWidgetProvider_2x extends NoteWidgetProvider {
+    /**
+     * 当小部件更新时调用此方法。
+     *
+     * @param context          应用程序上下文
+     * @param appWidgetManager AppWidgetManager 实例
+     * @param appWidgetIds     要更新的小部件 ID 数组
+     */
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        // 调用父类的 update 方法进行小部件更新
         super.update(context, appWidgetManager, appWidgetIds);
     }
 
+    /**
+     * 获取 2x 小部件的布局资源 ID。
+     *
+     * @return 布局资源 ID
+     */
     @Override
     protected int getLayoutId() {
         return R.layout.widget_2x;
     }
 
+    /**
+     * 根据背景 ID 获取 2x 小部件的背景资源 ID。
+     *
+     * @param bgId 背景 ID
+     * @return 背景资源 ID
+     */
     @Override
     protected int getBgResourceId(int bgId) {
         return ResourceParser.WidgetBgResources.getWidget2xBgResource(bgId);
     }
 
+    /**
+     * 获取 2x 小部件的类型。
+     *
+     * @return 小部件类型
+     */
     @Override
     protected int getWidgetType() {
         return Notes.TYPE_WIDGET_2X;
